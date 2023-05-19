@@ -5,6 +5,8 @@
     <style>
       body {
         margin: 0;
+        background-color: #f0f0f0;
+        font-family: sans-serif;
       }
       .container {
         display: flex;
@@ -13,36 +15,65 @@
       }
       .sidebar {
         flex: 0 0 20vw;
-        background-color: #f0f0f0;
         padding: 10px;
+      }
+      .link {
+        padding: 5px;
+        cursor: pointer;
+      }
+      .link:hover {
+        color: #36f;
       }
       .preview {
         flex: 1;
         display: flex;
         justify-content: center;
         align-items: center;
+        position: fixed;
+        width: 60%;
+        height: 100%;
+        right: 0;
       }
       .preview img {
         max-width: 100%;
         max-height: 100%;
       }
     </style>
-    <script>
-      function showPreview(src) {
-        const preview = document.getElementById('preview');
-        preview.innerHTML = '<img src="' + src + '">';
-      }
-    </script>
   </head>
   <body>
     <div class="container">
       <div class="sidebar">
         <h1>${PAGE_TITLE}</h1>
-${LINKS}
+        <div id="links"></div>
       </div>
       <div class="preview" id="preview">
         <p>Select a file to preview</p>
       </div>
     </div>
+    <script>
+      function showPreview(src) {
+        const previewDiv = document.getElementById('preview');
+        previewDiv.innerHTML = `<img src="${src}">`;
+      }
+
+      const links = [
+${LINKS}
+      ];
+
+      const urlPrefix = 'https://choephix.github.io/bitmap-fonts';
+      const linksDiv = document.querySelector('#links');
+      links.forEach(relativePath => {
+        const linkUrl = `${urlPrefix}/bitmap-fonts/${relativePath}`;
+        const div = document.createElement('div');
+        div.className = 'link';
+        div.textContent = relativePath;
+        div.onclick = function() {
+          showPreview(linkUrl);
+          return false;
+        };
+        linksDiv.appendChild(div);
+      });
+
+    </script>
   </body>
 </html>

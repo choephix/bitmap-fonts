@@ -4,7 +4,7 @@
     {
       "label": "🔨 Dev",
       "type": "shell",
-      "command": "nodemon -w scripts scripts/build.js",
+      "command": "nodemon scripts/build.js",
     },
     {
       "label": "📝 Build index.html",
