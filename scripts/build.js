@@ -6,7 +6,7 @@ function generateJSONLinksPage(folderPath, urlPrefix, pageTitle) {
   const links = files.map(file => {
     const relativePath = path.relative(folderPath, file);
     const link = `${urlPrefix}/${relativePath}`;
-    return `<li><a href="${link}">${relativePath}</a></li>`;
+    return `        <li><a href="${link}">${relativePath}</a></li>`;
   });
 
   const html = `
@@ -18,7 +18,7 @@ function generateJSONLinksPage(folderPath, urlPrefix, pageTitle) {
     <body>cd      
       <h1>${pageTitle}</h1>
       <ul>
-        ${links.join('\n')}
+${links.join('\n')}
       </ul>
     </body>
     </html>
