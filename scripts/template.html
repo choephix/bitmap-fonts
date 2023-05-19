@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>${PAGE_TITLE}</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      .container {
+        display: flex;
+        flex-direction: row;
+        height: 100vh;
+      }
+      .sidebar {
+        flex: 0 0 20vw;
+        background-color: #f0f0f0;
+        padding: 10px;
+      }
+      .preview {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .preview img {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    </style>
+    <script>
+      function showPreview(src) {
+        const preview = document.getElementById('preview');
+        preview.innerHTML = '<img src="' + src + '">';
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h1>${PAGE_TITLE}</h1>
+${LINKS}
+      </div>
+      <div class="preview" id="preview">
+        <p>Select a file to preview</p>
+      </div>
+    </div>
+  </body>
+</html>

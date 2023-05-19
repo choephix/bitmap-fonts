@@ -6,60 +6,10 @@ function generatePNGLinksPage(folderPath, urlPrefix, pageTitle) {
   const links = files.map(file => {
     const relativePath = path.relative(folderPath, file);
     const link = `${urlPrefix}/bitmap-fonts/${relativePath}`;
-    return `        <li><a href="${link}" onclick="showPreview('${link}'); return false;">${relativePath}</a></li>`;
+    return `        <div><a href="${link}" onclick="showPreview('${link}'); return false;">${relativePath}</a></div>`;
   });
-
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${pageTitle}</title>
-      <style>
-        .container {
-          display: flex;
-          flex-direction: row;
-          height: 100vh;
-        }
-        .sidebar {
-          flex: 0 0 200px;
-          background-color: #f0f0f0;
-          padding: 10px;
-        }
-        .preview {
-          flex: 1;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        .preview img {
-          max-width: 100%;
-          max-height: 100%;
-        }
-      </style>
-      <script>
-        function showPreview(src) {
-          const preview = document.getElementById('preview');
-          preview.innerHTML = '<img src="' + src + '">';
-        }
-      </script>
-    </head>
-    <body>
-      <div class="container">
-        <div class="sidebar">
-          <h1>${pageTitle}</h1>
-          <ul>
-${links.join('\n')}
-          </ul>
-        </div>
-        <div class="preview" id="preview">
-          <p>Select a file to preview</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  return html;
+  const htmlTemplate = fs.readFileSync('scripts/template.html').toString();
+  return htmlTemplate.replace(/\${PAGE_TITLE}/g, pageTitle).replace(/\${LINKS}/g, links.join('\n'));
 }
 
 function getAllPNGFiles(folderPath) {
