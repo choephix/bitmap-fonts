@@ -3556,7 +3556,7 @@
         "google-fontsize-64/ufl/UbuntuMono-Regular.png",
       ];
 
-      const urlPrefix = '';
+      const urlPrefix = window.location.href;
       const linksDiv = document.querySelector('#links');
       links.forEach(relativePath => {
         const linkUrl = `${urlPrefix}/bitmap-fonts/${relativePath}`;
