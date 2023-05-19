@@ -8,7 +8,9 @@ function generatePNGLinksPage(folderPath, pageTitle) {
     return `        "${relativePath}",`;
   });
   const htmlTemplate = fs.readFileSync('scripts/template.html').toString();
-  return htmlTemplate.replace(/\${PAGE_TITLE}/g, pageTitle).replace(/\${LINKS}/g, links.join('\n'));
+  return htmlTemplate
+    .replace(/\${PAGE_TITLE}/g, pageTitle)
+    .replace(/\${LINKS}/g, '\n' + links.join('\n'));
 }
 
 function getAllPNGFiles(folderPath) {
