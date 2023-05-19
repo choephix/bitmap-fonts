@@ -20,6 +20,7 @@
       .link {
         padding: 5px;
         cursor: pointer;
+        user-select: all;
       }
       .link:hover {
         color: #36f;
@@ -27,6 +28,7 @@
       .preview {
         flex: 1;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         position: fixed;
@@ -75,6 +77,11 @@
         canvas.height = img.height;
 
         renderMSDFImage(canvas, img);
+
+        const linkToJson = document.createElement('a');
+        linkToJson.textContent = 'Link to JSON';
+        linkToJson.href = src.replace('.png', '.json');
+        previewDiv.appendChild(linkToJson);
       }
 
       const links = [
