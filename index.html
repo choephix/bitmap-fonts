@@ -137,8 +137,6 @@
           void main() {
             vec4 depth = texture(u_depthTexture, v_texCoord);
             vec4 color = texture(u_colorTexture, v_texCoord + u_shift * depth.r);
-            // vec4 color = texture(u_colorTexture, v_texCoord);
-            // float depth = texture(u_depthTexture, v_texCoord).r;
             outColor = vec4(color.rgb, 1.0);
           }
         `;
@@ -234,7 +232,7 @@
 
         return {
           setShift: function (newShift) {
-            shift = newShift.map(v => v * 0.05);
+            shift = newShift.map(v => v * 0.025);
             draw();
           },
         };
