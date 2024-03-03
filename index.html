@@ -131,7 +131,7 @@
         }
 
         // Create fragment shader
-        const fragmentShaderSource = `#version 300 es
+const fragmentShaderSource = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_colorTexture;
@@ -141,14 +141,16 @@ uniform vec2 u_shift;
 in vec2 v_texCoord;
 out vec4 outColor;
 
+const float scale = 0.7; // Adjust this value to change the depth effect
+const float bias = -0.5; // Adjust this value to change the depth offset
+
 void main() {
-  vec4 depth = texture(u_depthTexture, v_texCoord);
-  // Apply shift based on depth to simulate basic parallax
-  vec2 shiftedTexCoord = v_texCoord + u_shift * (depth.r - 0.5); // Adjust parallax effect strength here
-  vec4 color = texture(u_colorTexture, shiftedTexCoord);
-  outColor = color;
+  float depth = texture(u_depthTexture, v_texCoord).r;
+  vec2 p = v_texCoord + (u_shift * (depth * scale + bias));
+  vec4 color = texture(u_colorTexture, p);
+  outColor = vec4(color.rgb, 1.0);
 }
-        `;
+`;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentShaderSource);
         gl.compileShader(fragmentShader);
