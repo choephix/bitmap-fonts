@@ -131,38 +131,38 @@
         }
 
         // Create fragment shader
-const fragmentShaderSource = `#version 300 es
-precision mediump float;
+        const fragmentShaderSource = `#version 300 es
+          precision mediump float;
 
-uniform sampler2D u_colorTexture;
-uniform sampler2D u_depthTexture;
-uniform vec2 u_shift;
+          uniform sampler2D u_colorTexture;
+          uniform sampler2D u_depthTexture;
+          uniform vec2 u_shift;
 
-in vec2 v_texCoord;
-out vec4 outColor;
+          in vec2 v_texCoord;
+          out vec4 outColor;
 
-// Function to smooth the depth-based shift
-vec2 smoothShift(vec2 shift, float depth) {
-  // Apply a smoothing function to the depth value to reduce artifacts
-  float smoothDepth = smoothstep(0.0, 1.0, depth);
-  // Adjust shift based on smoothed depth
-  return shift * smoothDepth;
-}
+          // Function to smooth the depth-based shift
+          vec2 smoothShift(vec2 shift, float depth) {
+            // Apply a smoothing function to the depth value to reduce artifacts
+            float smoothDepth = smoothstep(0.0, 1.0, depth);
+            // Adjust shift based on smoothed depth
+            return shift * smoothDepth;
+          }
 
-void main() {
-  // Read depth from the depth texture
-  float depth = texture(u_depthTexture, v_texCoord).r;
-  
-  // Calculate a smoothed shift based on depth
-  vec2 adjustedShift = smoothShift(u_shift, depth);
-  
-  // Sample the color texture with the adjusted shift
-  vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
-  
-  // Output the color, ensuring full opacity
-  outColor = vec4(color.rgb, 1.0);
-}
-`;
+          void main() {
+            // Read depth from the depth texture
+            float depth = texture(u_depthTexture, v_texCoord).r;
+            
+            // Calculate a smoothed shift based on depth
+            vec2 adjustedShift = smoothShift(u_shift, depth);
+            
+            // Sample the color texture with the adjusted shift
+            vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
+            
+            // Output the color, ensuring full opacity
+            outColor = vec4(color.rgb, 1.0);
+          }
+        `;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentShaderSource);
         gl.compileShader(fragmentShader);
