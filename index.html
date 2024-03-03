@@ -84,12 +84,19 @@
         // '/img/unnamed.jpg',
         // '/img/depth.png'
         '/img/eurydice-02.jpg',
-        '/img/eurydice-02-depth.png'
+        '/img/eurydice-02-depth.jpg'
       ).then(ctrl => {
         const previewDiv = document.getElementById('preview');
 
         const loop = () => {
-          const shift = [Math.sin(Date.now() * 0.0025), Math.cos(Date.now() * 0.0025)];
+          const now = performance.now();
+          const speed = 0.0025;
+          const strength = Math.abs(Math.sin(now * 0.00051));
+          const shift = [
+            //
+            strength * Math.sin(now * speed),
+            strength * Math.cos(now * speed),
+          ];
 
           previewDiv.style.transform = `
             perspective(600px)
@@ -141,27 +148,43 @@
           in vec2 v_texCoord;
           out vec4 outColor;
 
-          // Function to smooth the depth-based shift
           vec2 smoothShift(vec2 shift, float depth) {
-            // Apply a smoothing function to the depth value to reduce artifacts
             float smoothDepth = smoothstep(0.0, 1.0, depth);
-            // Adjust shift based on smoothed depth
             return shift * smoothDepth;
           }
 
-          void main() {
-            // Read depth from the depth texture
-            float depth = texture(u_depthTexture, v_texCoord).r;
+void main()
+{            
+    float str = length(u_shift);
+
+    float depth = texture(u_depthTexture, v_texCoord).r;
+    float undepth = 1.0 - depth;
+
+    vec2 centeredTexCoord = v_texCoord - 0.5;
+
+    float scale = mix(1.0, 1.0 + 0.05 * str, depth);
+    vec2 scaledTexCoord = (centeredTexCoord / scale) + 0.5;
+    
+    float depth2 = texture(u_depthTexture, scaledTexCoord).r;
+    vec2 adjustedShift = smoothShift(u_shift, depth2);
+    vec4 color = texture(u_colorTexture, scaledTexCoord + adjustedShift * str * 0.03);
+
+    outColor = color;
+}
+
+          // void main() {
+          //   // Read depth from the depth texture
+          //   float depth = texture(u_depthTexture, v_texCoord).r;
             
-            // Calculate a smoothed shift based on depth
-            vec2 adjustedShift = smoothShift(u_shift, depth);
+          //   // Calculate a smoothed shift based on depth
+          //   vec2 adjustedShift = smoothShift(u_shift, depth);
             
-            // Sample the color texture with the adjusted shift
-            vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
+          //   // Sample the color texture with the adjusted shift
+          //   vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
             
-            // Output the color, ensuring full opacity
-            outColor = vec4(color.rgb, 1.0);
-          }
+          //   // Output the color, ensuring full opacity
+          //   outColor = vec4(color.rgb, 1.0);
+          // }
         `;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentShaderSource);
@@ -200,8 +223,8 @@
         const colorTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, colorTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colorImg);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
@@ -209,8 +232,8 @@
         const depthTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, depthTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, depthImg);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
@@ -255,7 +278,7 @@
 
         return {
           setShift: function (newShift) {
-            shift = newShift.map(v => v * 0.02);
+            shift = newShift.map(v => v);
             draw();
           },
         };
