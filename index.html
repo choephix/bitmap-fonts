@@ -42,29 +42,6 @@
         max-height: 50vh;
         pointer-events: none;
       }
-
-      @keyframes wobble {
-        0% {
-          transform: perspective(600px) rotateY(20deg) rotateX(20deg);
-        }
-        25% {
-          transform: perspective(600px) rotateY(20deg) rotateX(-20deg);
-        }
-        50% {
-          transform: perspective(600px) rotateY(-20deg) rotateX(-20deg);
-        }
-        75% {
-          transform: perspective(600px) rotateY(-20deg) rotateX(20deg);
-        }
-        100% {
-          transform: perspective(600px) rotateY(20deg) rotateX(20deg);
-        }
-      }
-
-      .wobble {
-        animation: wobble 5s infinite linear;
-        transform-style: preserve-3d;
-      }
     </style>
   </head>
   <body>
