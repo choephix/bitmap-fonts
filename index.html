@@ -83,28 +83,38 @@
         });
       }
 
-      async function showPreview(src) {
+      async function showPreview(colorImgUrl, depthImgUrl) {
         const previewDiv = document.getElementById('preview');
         previewDiv.innerHTML = ``;
         previewDiv.classList.add('wobble');
 
-        const img = await loadImage(src);
+        const colorImg = await loadImage(colorImgUrl);
+        const depthImg = await loadImage(depthImgUrl);
 
         const canvas = document.createElement('canvas');
         previewDiv.appendChild(canvas);
 
-        canvas.width = img.width;
-        canvas.height = img.height;
+        // Assuming both images have the same dimensions
+        canvas.width = colorImg.width;
+        canvas.height = colorImg.height;
 
-        renderMSDFImage(canvas, img);
+        // Assuming renderMSDFImage can handle both color and depth images
+        return renderMSDFImage(canvas, colorImg, depthImg);
       }
 
       // showPreview("https://storage.drimgar.com/illustrations/eurydice-02.jpg")
-      showPreview('/unnamed.jpg');
+      showPreview('/unnamed.jpg', '/unnamed.jpg').then((ctrl) => {
+        const loop = () => {
+          ctrl.setShiftX(Math.abs(Math.sin(Date.now() * 0.0025)));
+          ctrl.setShiftY(Math.abs(Math.cos(Date.now() * 0.0025)));
+          requestAnimationFrame(loop);
+        };
+        loop();
+      });
     </script>
 
     <script>
-      function renderMSDFImage(canvas, img) {
+      function renderMSDFImage(canvas, colorImg, depthImg) {
         const gl = canvas.getContext('webgl2');
         if (!gl) {
           throw new Error('WebGL context not available');
@@ -133,12 +143,17 @@
         // Create fragment shader
         const fragmentShaderSource = `#version 300 es
           precision mediump float;
-          uniform sampler2D u_texture;
+          uniform sampler2D u_colorTexture;
+          uniform sampler2D u_depthTexture;
+          uniform float u_shiftX;
+          uniform float u_shiftY;
           in vec2 v_texCoord;
           out vec4 outColor;
 
           void main() {
-            outColor = texture(u_texture, v_texCoord);
+            vec4 color = texture(u_colorTexture, v_texCoord);
+            float depth = texture(u_depthTexture, v_texCoord).r;
+            outColor = vec4(color.rgb * u_shiftX, u_shiftX);
           }
         `;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -174,10 +189,19 @@
         const texCoords = [0, 1, 0, 0, 1, 1, 1, 0];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
 
-        // Create texture
-        const textureObject = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, textureObject);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        // Create color texture
+        const colorTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colorImg);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        // Create depth texture
+        const depthTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, depthImg);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -186,22 +210,56 @@
         // Set up attributes and uniforms
         const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
         const texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
-        const textureUniformLocation = gl.getUniformLocation(program, 'u_texture');
 
-        gl.useProgram(program);
+        // Set up uniforms
+        const colorTextureUniformLocation = gl.getUniformLocation(program, 'u_colorTexture');
+        const depthTextureUniformLocation = gl.getUniformLocation(program, 'u_depthTexture');
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.enableVertexAttribArray(positionAttributeLocation);
-        gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+        const shiftXUniformLocation = gl.getUniformLocation(program, 'u_shiftX');
+        const shiftYUniformLocation = gl.getUniformLocation(program, 'u_shiftY');
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.enableVertexAttribArray(texCoordAttributeLocation);
-        gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+        let shiftX = 0.5;
+        let shiftY = 0;
 
-        gl.uniform1i(textureUniformLocation, 0);
+        function draw() {
+          gl.useProgram(program);
 
-        // Render
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+          gl.enableVertexAttribArray(positionAttributeLocation);
+          gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+          gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+          gl.enableVertexAttribArray(texCoordAttributeLocation);
+          gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, colorTexture);
+          gl.uniform1i(colorTextureUniformLocation, 0);
+
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+          gl.uniform1i(depthTextureUniformLocation, 1);
+
+          gl.uniform1f(shiftXUniformLocation, shiftX);
+          gl.uniform1f(shiftYUniformLocation, shiftY);
+
+          // Render
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
+
+        // Initial draw
+        draw();
+
+        return {
+          setShiftX: function (newShiftX) {
+            shiftX = newShiftX;
+            draw();
+          },
+          setShiftY: function (newShiftY) {
+            shiftY = newShiftY;
+            draw();
+          },
+        };
       }
     </script>
   </body>
