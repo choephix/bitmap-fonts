@@ -36,6 +36,8 @@
         height: fit-content;
         right: 100px;
         top: 100px;
+        border-radius: 20px;
+        overflow: hidden;
       }
       .preview canvas {
         max-width: 50vw;
@@ -153,38 +155,24 @@
             return shift * smoothDepth;
           }
 
-void main()
-{            
-    float str = length(u_shift);
+          void main()
+          {            
+              float str = length(u_shift);
 
-    float depth = texture(u_depthTexture, v_texCoord).r;
-    float undepth = 1.0 - depth;
+              float depth = texture(u_depthTexture, v_texCoord).r;
+              float undepth = 1.0 - depth;
 
-    vec2 centeredTexCoord = v_texCoord - 0.5;
+              vec2 centeredTexCoord = v_texCoord - 0.5;
 
-    float scale = mix(1.0, 1.0 + 0.05 * str, depth);
-    vec2 scaledTexCoord = (centeredTexCoord / scale) + 0.5;
-    
-    float depth2 = texture(u_depthTexture, scaledTexCoord).r;
-    vec2 adjustedShift = smoothShift(u_shift, depth2);
-    vec4 color = texture(u_colorTexture, scaledTexCoord + adjustedShift * str * 0.03);
+              float scale = mix(1.0, 1.0 + 0.05 * str, depth);
+              vec2 scaledTexCoord = (centeredTexCoord / scale) + 0.5;
+              
+              float depth2 = texture(u_depthTexture, scaledTexCoord).r;
+              vec2 adjustedShift = smoothShift(u_shift, depth2);
+              vec4 color = texture(u_colorTexture, scaledTexCoord + adjustedShift * str * 0.03);
 
-    outColor = color;
-}
-
-          // void main() {
-          //   // Read depth from the depth texture
-          //   float depth = texture(u_depthTexture, v_texCoord).r;
-            
-          //   // Calculate a smoothed shift based on depth
-          //   vec2 adjustedShift = smoothShift(u_shift, depth);
-            
-          //   // Sample the color texture with the adjusted shift
-          //   vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
-            
-          //   // Output the color, ensuring full opacity
-          //   outColor = vec4(color.rgb, 1.0);
-          // }
+              outColor = color;
+          }
         `;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentShaderSource);
