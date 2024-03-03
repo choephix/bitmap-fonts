@@ -93,8 +93,8 @@
 
           previewDiv.style.transform = `
             perspective(600px)
-            rotateY(${-shift[0] * 20}deg)
-            rotateX(${shift[1] * 20}deg)
+            rotateY(${-shift[0] * 10}deg)
+            rotateX(${shift[1] * 10}deg)
           `;
           ctrl.setShift(shift);
           requestAnimationFrame(loop);
@@ -141,13 +141,25 @@ uniform vec2 u_shift;
 in vec2 v_texCoord;
 out vec4 outColor;
 
-const float scale = 0.7; // Adjust this value to change the depth effect
-const float bias = -0.5; // Adjust this value to change the depth offset
+// Function to smooth the depth-based shift
+vec2 smoothShift(vec2 shift, float depth) {
+  // Apply a smoothing function to the depth value to reduce artifacts
+  float smoothDepth = smoothstep(0.0, 1.0, depth);
+  // Adjust shift based on smoothed depth
+  return shift * smoothDepth;
+}
 
 void main() {
+  // Read depth from the depth texture
   float depth = texture(u_depthTexture, v_texCoord).r;
-  vec2 p = v_texCoord + (u_shift * (depth * scale + bias));
-  vec4 color = texture(u_colorTexture, p);
+  
+  // Calculate a smoothed shift based on depth
+  vec2 adjustedShift = smoothShift(u_shift, depth);
+  
+  // Sample the color texture with the adjusted shift
+  vec4 color = texture(u_colorTexture, v_texCoord + adjustedShift);
+  
+  // Output the color, ensuring full opacity
   outColor = vec4(color.rgb, 1.0);
 }
 `;
@@ -243,7 +255,7 @@ void main() {
 
         return {
           setShift: function (newShift) {
-            shift = newShift.map(v => v * 0.025);
+            shift = newShift.map(v => v * 0.02);
             draw();
           },
         };
