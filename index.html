@@ -86,7 +86,6 @@
       async function showPreview(colorImgUrl, depthImgUrl) {
         const previewDiv = document.getElementById('preview');
         previewDiv.innerHTML = ``;
-        previewDiv.classList.add('wobble');
 
         const colorImg = await loadImage(colorImgUrl);
         const depthImg = await loadImage(depthImgUrl);
@@ -103,10 +102,18 @@
       }
 
       // showPreview("https://storage.drimgar.com/illustrations/eurydice-02.jpg")
-      showPreview('/unnamed.jpg', '/unnamed.jpg').then((ctrl) => {
+      showPreview('/unnamed.jpg', '/depth.png').then(ctrl => {
+        const previewDiv = document.getElementById('preview');
+
         const loop = () => {
-          ctrl.setShiftX(Math.abs(Math.sin(Date.now() * 0.0025)));
-          ctrl.setShiftY(Math.abs(Math.cos(Date.now() * 0.0025)));
+          const shift = [Math.sin(Date.now() * 0.0025), Math.cos(Date.now() * 0.0025)];
+
+          previewDiv.style.transform = `
+            perspective(600px)
+            rotateY(${-shift[0] * 20}deg)
+            rotateX(${shift[1] * 20}deg)
+          `;
+          ctrl.setShift(shift);
           requestAnimationFrame(loop);
         };
         loop();
@@ -145,15 +152,17 @@
           precision mediump float;
           uniform sampler2D u_colorTexture;
           uniform sampler2D u_depthTexture;
-          uniform float u_shiftX;
-          uniform float u_shiftY;
+          uniform vec2 u_shift;
+
           in vec2 v_texCoord;
           out vec4 outColor;
 
           void main() {
-            vec4 color = texture(u_colorTexture, v_texCoord);
-            float depth = texture(u_depthTexture, v_texCoord).r;
-            outColor = vec4(color.rgb * u_shiftX, u_shiftX);
+            vec4 depth = texture(u_depthTexture, v_texCoord);
+            vec4 color = texture(u_colorTexture, v_texCoord + u_shift * depth.r);
+            // vec4 color = texture(u_colorTexture, v_texCoord);
+            // float depth = texture(u_depthTexture, v_texCoord).r;
+            outColor = vec4(color.rgb, 1.0);
           }
         `;
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -215,11 +224,8 @@
         const colorTextureUniformLocation = gl.getUniformLocation(program, 'u_colorTexture');
         const depthTextureUniformLocation = gl.getUniformLocation(program, 'u_depthTexture');
 
-        const shiftXUniformLocation = gl.getUniformLocation(program, 'u_shiftX');
-        const shiftYUniformLocation = gl.getUniformLocation(program, 'u_shiftY');
-
-        let shiftX = 0.5;
-        let shiftY = 0;
+        const shiftUniformLocation = gl.getUniformLocation(program, 'u_shift');
+        let shift = [0.5, 0];
 
         function draw() {
           gl.useProgram(program);
@@ -240,8 +246,7 @@
           gl.bindTexture(gl.TEXTURE_2D, depthTexture);
           gl.uniform1i(depthTextureUniformLocation, 1);
 
-          gl.uniform1f(shiftXUniformLocation, shiftX);
-          gl.uniform1f(shiftYUniformLocation, shiftY);
+          gl.uniform2fv(shiftUniformLocation, shift);
 
           // Render
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -251,12 +256,8 @@
         draw();
 
         return {
-          setShiftX: function (newShiftX) {
-            shiftX = newShiftX;
-            draw();
-          },
-          setShiftY: function (newShiftY) {
-            shiftY = newShiftY;
+          setShift: function (newShift) {
+            shift = newShift.map(v => v * 0.05);
             draw();
           },
         };
