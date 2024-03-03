@@ -79,7 +79,13 @@
       }
 
       // showPreview("https://storage.drimgar.com/illustrations/eurydice-02.jpg")
-      showPreview('/unnamed.jpg', '/depth.png').then(ctrl => {
+      showPreview(
+        //
+        // '/img/unnamed.jpg',
+        // '/img/depth.png'
+        '/img/eurydice-02.jpg',
+        '/img/eurydice-02-depth.png'
+      ).then(ctrl => {
         const previewDiv = document.getElementById('preview');
 
         const loop = () => {
